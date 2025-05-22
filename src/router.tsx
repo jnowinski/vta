@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import RequireAuth from "./components/RequireAuth";
-import App from "./App";
+import App from "./pages/App";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import StudentDashboard from "./pages/StudentDashboard";

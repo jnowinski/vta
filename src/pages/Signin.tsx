@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUser } from '../context/UserContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { getDashboardRoute } from '../utils/routeHelpers';
 import type { FormEvent } from 'react';
 const Signin: React.FC = () => {
-    const { signIn } = useAuth();
+    const { session, signIn } = useAuth();
     const { fetchUserProfile } = useUser();
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const redirectIfLoggedIn = async () => {
+            if (session?.user) {
+                try {
+                    const { userProfile, error } = await fetchUserProfile(session.user.id);
+                    if (error) throw new Error('Error fetching user profile');
+                    if (userProfile) {
+                        navigate(getDashboardRoute(userProfile.role));
+                    }
+                } catch (err: any) {
+                    console.error('Redirect error:', err);
+                    setError('Failed to redirect to dashboard.');
+                }
+            }
+        };
+        redirectIfLoggedIn();
+    }, [session, fetchUserProfile, navigate]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

@@ -1,13 +1,34 @@
 import { useAuth } from '../context/AuthContext';
-import React, { useState } from 'react';
+import { useUser } from '../context/UserContext';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getDashboardRoute } from '../utils/routeHelpers';
 import type { FormEvent } from 'react';
 import zxcvbn from 'zxcvbn';
 
 const Signup: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
-  const { signUp } = useAuth();
+  const { session, signUp } = useAuth();
+  const { fetchUserProfile } = useUser();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const redirectIfLoggedIn = async () => {
+      if (session?.user) {
+        try {
+          const { userProfile, error } = await fetchUserProfile(session.user.id);
+          if (error) throw new Error('Error fetching user profile');
+          if (userProfile) {
+            navigate(getDashboardRoute(userProfile.role));
+          }
+        } catch (err: any) {
+          console.error('Redirect error:', err);
+          setError('Failed to redirect to dashboard.');
+        }
+      }
+    };
+    redirectIfLoggedIn();
+  }, [session, fetchUserProfile, navigate]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,7 +51,7 @@ const Signup: React.FC = () => {
       setError('Password must be at least 8 characters')
       return;
     }
-    
+
     const result = zxcvbn(password);
     if (result.score < 3) {
       setError('Password is too weak. Please include digits, lowercase, uppercase, and special characters.');
